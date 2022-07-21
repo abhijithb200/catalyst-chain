@@ -15,7 +15,7 @@ if stat=="y":
     # for i in neigh:
     #     connection.append(Peer2Peer.sender(i))
     if len( sys.argv ) > 2:
-        peer.sender(int(sys.argv[2]))
+        peer.start_sender_threat(int(sys.argv[2]))
 
     while True:
         pass
