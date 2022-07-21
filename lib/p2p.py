@@ -7,7 +7,6 @@ import threading
 class Peer2Peer:
     def __init__(self):
         self.connections = []
-        print('fuck')
         
     
     def listener(self,port):
