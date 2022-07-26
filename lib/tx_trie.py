@@ -1,6 +1,9 @@
 #https://pymerkle.readthedocs.io/en/latest/proof.html#verification
 from hashlib import sha3_256
 
+'''
+Collect all the transaction and create a merkle tree from that where we can do proof and all
+'''
 
 class MerkleNode:
     def __init__(self,hash):

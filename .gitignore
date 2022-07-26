@@ -1,2 +1,3 @@
 lib/__pycache__/
-*.sqlite
+lib/*.sqlite
+lib/*.sqlite-journal
