@@ -1,6 +1,6 @@
 import socket
 import threading
-
+import json
 
 class Peer2Peer:
     def __init__(self):
@@ -60,26 +60,36 @@ class Peer2Peer:
                 self.broadcast(data)
             
 
-class NodeDiscovery:
+class NodeDiscovery(Peer2Peer):
     def __init__(self):
-        pass
+        Peer2Peer.__init__(self)
 
-    def start_threat(self):
-        listener = threading.Thread(target=self.listen,daemon=True)
+    def start_udp_threat(self,port):
+        listener = threading.Thread(target=self.listen_udp,daemon=True,args=(port,))
         listener.start()
 
-    def start(self):
+    def send_udp(self,data,port):
+        if type(data)==dict:data = json.dumps(data)
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        return sock
+        sock.sendto(data.encode(),('127.0.0.1',int(port)))
 
-    def listen(self):
+    def listen_udp(self,port):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.bind(('0.0.0.0', self.sport))
-        print('Listening on ',self.sport)
+        sock.bind(('0.0.0.0', int(port)))
+        print('Listening udp on ',int(port))
 
         while True:
             data,addr = sock.recvfrom(2024)
-            print(data)
+            d = json.loads(str(data.decode()))
+
+            if 'query' in d :
+                if d['query'] == "node_discovery":
+                    ip,port = d['from']['ip'],int(d['from']['port'])
+                    self.send_udp({'result':'fine'},int(port))
+            else:
+                print(d)
+            
+            
         
