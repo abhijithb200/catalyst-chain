@@ -1,80 +1,58 @@
 import socket
 import threading
 import json
+import sys
 
-class Peer2Peer:
-    def __init__(self):
+class Peer2Peer():
+    def __init__(self,sport):
+        self.sport = sport
         self.connections = []
         
-    
-    def listener(self,port):
-        receiver = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        receiver.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        receiver.bind(('127.0.0.1',int(port)))
-        receiver.listen(5)
-        print('Listening...',port)
-
-        while True:
-            c,addr = receiver.accept()
-            self.connections.append(c)
-            thre = threading.Thread(target=self.server_handler, args=(c,addr))
-            thre.start()
-            
-    def broadcast(self,msg):
-        for i,conn in enumerate(self.connections):
-            try:
-                conn.send(msg.encode('utf-8'))
-            except:
-                del self.connections[i]
-                print('deleted')
-                continue
-
-    def server_handler(self,c,addr):
-        while True:
-            try:
-                print(addr,' : ',c.recv(1024).decode("utf-8"))
-            except:
-                pass
-            msg = input(">")
-            self.broadcast(msg)
-           
-    def start_threat(self,port):
-        listener = threading.Thread(target=self.listener,daemon=True,args=(port,))
+        #run up the server
+        self.start_threat()
+        self.querynodes()
+        
+    def start_threat(self):
+        listener = threading.Thread(target=self.listen,daemon=True,args=(self.sport,))
         listener.start()
+        
 
-    def start_sender_threat(self,port):
-        listener = threading.Thread(target=self.sender,daemon=True,args=(port,))
-        listener.start()
-
-    def sender(self,port):
-        sender = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-        sender.connect((('127.0.0.1',port)))
-        while True:
-            try:
-                sender.send('hi'.encode('utf-8'))
-                data = sender.recv(1024).decode("utf-8")
-                print(data)
-            except:
-                pass
-            if len(self.connections)>0:
-                self.broadcast(data)
-            
-
-class NodeDiscovery(Peer2Peer):
-    def __init__(self):
-        Peer2Peer.__init__(self)
-
-    def start_udp_threat(self,port):
-        listener = threading.Thread(target=self.listen_udp,daemon=True,args=(port,))
-        listener.start()
-
-    def send_udp(self,data,port):
+    def send(self,data,addr):
         if type(data)==dict:data = json.dumps(data)
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.sendto(data.encode(),('127.0.0.1',int(port)))
+        sock.sendto(data.encode(),addr)
+        
+    def broadcast(self,data):
+        self.querynodes()
+        if type(data)==dict:data = json.dumps(data)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        print(self.connections)
+        for i in self.connections:
+            sock.sendto(data.encode(),i)
 
-    def listen_udp(self,port):
+    def addconnections(self,addr):
+        if addr not in self.connections:
+            self.connections.append(addr)
+
+    def setconnections(self,d):
+        temp = []
+        for i in  d:
+            temp.append(tuple(i))
+        self.connections = temp
+
+    def querynodes(self):
+        data = {'query':'node_discovery',
+            'from':{'ip':'127.0.0.1','port':self.sport}
+            }
+
+        if self.sport!='5000':
+            self.send(data,('127.0.0.1',5000))
+        else:
+            self.connections.append(('127.0.0.1',5000))
+
+    def listen(self,port):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.bind(('0.0.0.0', int(port)))
@@ -83,13 +61,14 @@ class NodeDiscovery(Peer2Peer):
         while True:
             data,addr = sock.recvfrom(2024)
             d = json.loads(str(data.decode()))
-
             if 'query' in d :
                 if d['query'] == "node_discovery":
-                    ip,port = d['from']['ip'],int(d['from']['port'])
-                    self.send_udp({'result':'fine'},int(port))
+                    addr = (d['from']['ip'],int(d['from']['port']))
+                    self.addconnections(addr)
+                    self.send({'result':self.connections},addr)
+                    print(self.connections)
+            elif 'result' in d:
+                self.setconnections(d['result'])
+
             else:
                 print(d)
-            
-            
-        
