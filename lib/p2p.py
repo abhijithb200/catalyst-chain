@@ -1,7 +1,8 @@
 import socket
 import threading
 import json
-import sys
+from lib.slot import Slot
+
 
 class Peer2Peer():
     def __init__(self,sport):
@@ -10,7 +11,7 @@ class Peer2Peer():
         
         #run up the server
         self.start_threat()
-        self.querynodes()
+        self.querynodestart()
         
     def start_threat(self):
         listener = threading.Thread(target=self.listen,daemon=True,args=(self.sport,))
@@ -52,6 +53,16 @@ class Peer2Peer():
         else:
             self.connections.append(('127.0.0.1',5000))
 
+    def querynodestart(self):
+        data = {'query':'node_start',
+            'from':{'ip':'127.0.0.1','port':self.sport}
+            }
+
+        if self.sport!='5000':
+            self.send(data,('127.0.0.1',5000))
+        else:
+            self.connections.append(('127.0.0.1',5000))
+
     def listen(self,port):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -65,10 +76,19 @@ class Peer2Peer():
                 if d['query'] == "node_discovery":
                     addr = (d['from']['ip'],int(d['from']['port']))
                     self.addconnections(addr)
-                    self.send({'result':self.connections},addr)
-                    print(self.connections)
-            elif 'result' in d:
-                self.setconnections(d['result'])
+                    self.send({'nodes':self.connections},addr)
+                elif d['query'] == "node_start":
+                    addr = (d['from']['ip'],int(d['from']['port']))
+                    self.addconnections(addr)
+                    self.send({'nodes':self.connections,'slot':Slot.get_slot()},addr)
 
+                
+            elif 'nodes' in d:
+                self.setconnections(d['nodes'])
+                if 'slot' in d:
+                    Slot.slotcount = int(d['slot'][0])
+                    Slot.second = int(d['slot'][1])
+                print(d)
+                
             else:
                 print(d)
