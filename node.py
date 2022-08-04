@@ -2,12 +2,15 @@ import threading
 from lib.p2p import Peer2Peer
 import sys
 from lib.slot import Slot
-threading
+from lib.PoS import Block
+
 
 
 peer = Peer2Peer(sys.argv[1])
 Slot.start_slot(peer)
 
+#create the genesis block
+Block.startchain(peer)
 
 
 while True:

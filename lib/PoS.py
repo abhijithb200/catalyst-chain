@@ -1,11 +1,49 @@
 import random
+import datetime
+import hashlib
 
-def find_proposer(lst):
-    # lst = [1,2,3,4,5]
-    # selected = random.choice(lst)
-    # if selected in [5]: 
-    #     return selected  
-    # else:  
-    #     return find_proposer(lst)
-    print(lst,"from new")
+class Block:
+
+    @classmethod
+    def startchain(cls,peer):
+        cls.peer = peer
+        peer.chain=[{'header':
+                    {
+                    'index': 0,
+                    'timestamp': str(datetime.datetime.now()),
+                    'mined_by' : None,
+                    'hash':'0000000000000000000000000000000000000000000000000000000000000000',
+                    'previous_hash': 0,
+                    'slot':None
+                    },
+                 'validated':[]
+                }]
+        return peer
+
+    def find_proposer(lst):
+        if len(lst)==0:
+            return 'Noting'
+        else:
+            selected = random.choice(lst)
+            while selected == ('127.0.0.1',5000):
+                selected = random.choice(lst)
+        
+        return selected
+
+    def create_block(peer):
+        block = {'header':
+                    {
+                    'index': len(peer.chain),
+                    'timestamp': str(datetime.datetime.now()),
+                    'mined_by':peer.sport,
+                    'hash':0,
+                    'previous_hash': peer.chain[-1]['header']['hash'],
+                    'slot':None,
+                    },
+                 'validated':None
+                }
+        block['header']['hash']=hashlib.sha3_256(str(block['header']).encode()).hexdigest()
+        peer.block =  block
+        return block
+
 

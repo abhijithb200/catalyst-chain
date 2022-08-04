@@ -2,6 +2,7 @@ import socket
 import threading
 import json
 from lib.slot import Slot
+from lib.PoS import Block
 
 
 class Peer2Peer():
@@ -31,7 +32,8 @@ class Peer2Peer():
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         print(self.connections)
         for i in self.connections:
-            sock.sendto(data.encode(),i)
+            if i[1]!=int(self.sport):
+                sock.sendto(data.encode(),i)
 
     def addconnections(self,addr):
         if addr not in self.connections:
@@ -43,6 +45,9 @@ class Peer2Peer():
             temp.append(tuple(i))
         self.connections = temp
 
+    def cast_vote(self):
+        vote={'by':self.sport,'slot':Slot.get_slot()}
+        
     def querynodes(self):
         data = {'query':'node_discovery',
             'from':{'ip':'127.0.0.1','port':self.sport}
@@ -50,8 +55,6 @@ class Peer2Peer():
 
         if self.sport!='5000':
             self.send(data,('127.0.0.1',5000))
-        else:
-            self.connections.append(('127.0.0.1',5000))
 
     def querynodestart(self):
         data = {'query':'node_start',
@@ -90,5 +93,20 @@ class Peer2Peer():
                     Slot.second = int(d['slot'][1])
                 print(d)
                 
+            elif 'validator' in d:
+                if d['validator'][1] == int(self.sport):
+                    self.validator = int(self.sport)
+
+                    #crate block if i am the validator
+                    print('Iam the validaotor')
+                    self.broadcast(Block.create_block(self))
+
+            elif 'header' in d:
+                self.block = d
+                self.block['validated'].append(self.sport)
+
+                #broadcast the vote
+
+                    
             else:
                 print(d)

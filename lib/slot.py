@@ -1,7 +1,7 @@
 from re import T
 import sched, time
 import threading
-import lib.PoS as PoS
+from lib.PoS import Block
 
 class Slot:
     s = sched.scheduler(time.time, time.sleep)
@@ -14,7 +14,10 @@ class Slot:
             cls.slotcount+=1
             cls.second=0    
         cls.second+=1
-        PoS.find_proposer(cls.peer.connections)
+        if int(cls.peer.sport) == 5000 and cls.second==2:
+            validator = Block.find_proposer(cls.peer.connections)
+            cls.peer.broadcast({"validator":validator})
+
         print("Slot=>",cls.slotcount," ",cls.second,end="\r")
         sc.enter(1, 1,cls.slotfun, (cls,sc,))
 
@@ -27,8 +30,6 @@ class Slot:
         cls.peer = peer
         listener = threading.Thread(target=cls.shoot,args=(cls,),daemon=True)
         listener.start()
-        while True:
-            pass
 
     @classmethod
     def get_slot(cls):
