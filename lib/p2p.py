@@ -99,17 +99,10 @@ class Peer2Peer():
                     print("[!]I am the validator")
 
                     self.validator = int(self.sport)
-                    block =  Block.create_block(self)
+                    self.block =  Block.create_block(self,Slot.get_slot()[0])
 
-                    block['header']['index'] = Slot.get_slot()[0] 
-                    block['body'] = self.mempool
-                    print("[!]Mempool ",self.mempool)
-
-                    
-
-                    self.block = block
                     #crate block if i am the validator
-                    self.broadcast(block)
+                    self.broadcast(self.block)
 
                     self.mempool = []
 

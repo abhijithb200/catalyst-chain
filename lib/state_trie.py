@@ -8,10 +8,11 @@ from hashlib import sha3_256
 As the transactions happens, each account is updated along with the state root hash
 '''
 
-db = SqliteDict("example.sqlite")
-ac1 = "0x42D63EA9FFF6896C1D25C98B65461C4bC5C05475"
-ac2 = "0x94fEbA130c8F739b1E2D2F5D8B82adB0898AFd3a"
-ac3 = "0xA1B4642f8E2eed90E1d7b466060580C408Ce5564"
+# db = SqliteDict("exams.sqlite")
+db = SqliteDict("./lib/ex.sqlite",autocommit=True)
+
+
+
 
 class StateNode:
     def __init__(self,hash):
@@ -24,13 +25,16 @@ class StateNode:
 class StateTree:
     def __init__(self):
         self.leaves = []
+        self.root = StateNode(self.compute_hash('00'))
+        for key, item in db.items():
+            self.add_leaf(key,item)
+        #admin accoount with balance this
 
     def add_leaf(self,addr,value):
         node = StateNode(self.compute_hash(value))
         self.leaves.append(node)
 
         db[self.compute_hash(addr)] = value
-
         self.root = self.build_merkle_tree(self.leaves)
 
 
@@ -62,16 +66,17 @@ class StateTree:
 
     def replace(self,addr,balance,nonce):
         
-        for leaf in self.leaves:            
+        for leaf in self.leaves: 
             if leaf.hash == self.compute_hash(db[self.compute_hash(addr)]):
-                print("Leaf exists")
                 path = self.generate_path(leaf)
-                print(path)
-
                 db[self.compute_hash(addr)] = {'addr':addr,'nonce':nonce,'balance':balance}
+                leaf.hash = self.compute_hash(db[self.compute_hash(addr)])
                 modi = self.compute_hash((db[self.compute_hash(addr)]))
                 self.reproduce(modi,path)
-        return False
+
+
+
+
 
     def reproduce(self,modi,path):
         proof_till_now = modi
@@ -85,7 +90,8 @@ class StateTree:
             else:
                 proof_till_now = StateTree.compute_hash(proof_till_now+hash)
 
-        print("New hash :",proof_till_now) 
+        self.root.hash = proof_till_now 
+        
 
     def generate_path(self,new_leaf,trial=[]):
         if new_leaf == self.root:
@@ -99,6 +105,9 @@ class StateTree:
             trial.append((new_leaf.parent.left_child.hash,True))
             return self.generate_path(new_leaf.parent,trial)
         
+    def getdata(self,addr):
+        return db[self.compute_hash(addr)]
+
     @staticmethod
     def compute_hash(data):
         data = str(data).encode('utf-8')
@@ -106,17 +115,29 @@ class StateTree:
         # return str(data)
 
 
-m = StateTree()
 
-#create a new account
-m.add_leaf("0",{'addr':0,'nonce':0,'balance':1000})
-m.add_leaf("1",{'addr':1,'nonce':0,'balance':1000})
-m.add_leaf("2",{'addr':2,'nonce':0,'balance':1000})
-m.add_leaf("3",{'addr':3,'nonce':0,'balance':1000})
+if __name__ == "__main__":
+    # m = StateTree()
 
-# m.replace(str({'addr':2,'nonce':0,'balance':1000}))
+    # #create a new account
+    # m.add_leaf("0",{'addr':0,'nonce':0,'balance':1000})
+    # m.add_leaf("1",{'addr':1,'nonce':0,'balance':1000})
+    # m.add_leaf("2",{'addr':2,'nonce':0,'balance':1000})
+    # m.add_leaf("3",{'addr':3,'nonce':0,'balance':1000})
 
-print(m.root.hash)
-m.replace("2",balance=800,nonce=1)
+    # # m.replace(str({'addr':2,'nonce':0,'balance':1000}))
+
+    # print(m.root.hash)
+    # # m.replace("2",balance=800,nonce=1)
+    # # print(m.root.hash)
+    # # print(m.replace("2",balance=1800,nonce=1))
+    # # print(m.replace("2",balance=2800,nonce=1))
+    # # print(m.replace("2",balance=3800,nonce=1))
+    # m.replace("2",balance=4800,nonce=1)
+    # print(m.root.hash)
+    # print(m.getdata("2"))
+    for key, item in db.items():
+        print("%s=%s" % (key, item))
+    
 
 
