@@ -16,7 +16,8 @@ class Block:
                     'previous_hash': 0,
                     'slot':None
                     },
-                 'validated':[]
+                 'validated':[],
+                 'body':None
                 }]
         return peer
 
@@ -33,17 +34,17 @@ class Block:
     def create_block(peer):
         block = {'header':
                     {
-                    'index': len(peer.chain),
+                    'index': 0,
                     'timestamp': str(datetime.datetime.now()),
                     'mined_by':peer.sport,
                     'hash':0,
                     'previous_hash': peer.chain[-1]['header']['hash'],
-                    'slot':None,
                     },
-                 'validated':None
+                 'validated':[peer.sport],
+                 'body':None
                 }
         block['header']['hash']=hashlib.sha3_256(str(block['header']).encode()).hexdigest()
-        peer.block =  block
+        
         return block
 
 

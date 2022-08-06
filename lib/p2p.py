@@ -9,6 +9,7 @@ class Peer2Peer():
     def __init__(self,sport):
         self.sport = sport
         self.connections = []
+        self.mempool = []
         
         #run up the server
         self.start_threat()
@@ -18,8 +19,7 @@ class Peer2Peer():
         listener = threading.Thread(target=self.listen,daemon=True,args=(self.sport,))
         listener.start()
         
-
-    def send(self,data,addr):
+    def send(data,addr):
         if type(data)==dict:data = json.dumps(data)
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -47,6 +47,7 @@ class Peer2Peer():
 
     def cast_vote(self):
         vote={'by':self.sport,'slot':Slot.get_slot()}
+        self.broadcast(vote)
         
     def querynodes(self):
         data = {'query':'node_discovery',
@@ -54,7 +55,7 @@ class Peer2Peer():
             }
 
         if self.sport!='5000':
-            self.send(data,('127.0.0.1',5000))
+            Peer2Peer.send(data,('127.0.0.1',5000))
 
     def querynodestart(self):
         data = {'query':'node_start',
@@ -62,7 +63,7 @@ class Peer2Peer():
             }
 
         if self.sport!='5000':
-            self.send(data,('127.0.0.1',5000))
+            Peer2Peer.send(data,('127.0.0.1',5000))
         else:
             self.connections.append(('127.0.0.1',5000))
 
@@ -79,11 +80,12 @@ class Peer2Peer():
                 if d['query'] == "node_discovery":
                     addr = (d['from']['ip'],int(d['from']['port']))
                     self.addconnections(addr)
-                    self.send({'nodes':self.connections},addr)
+                    self.broadcast({'nodes':self.connections})
+
                 elif d['query'] == "node_start":
                     addr = (d['from']['ip'],int(d['from']['port']))
                     self.addconnections(addr)
-                    self.send({'nodes':self.connections,'slot':Slot.get_slot()},addr)
+                    self.broadcast({'nodes':self.connections,'slot':Slot.get_slot()})
 
                 
             elif 'nodes' in d:
@@ -91,22 +93,55 @@ class Peer2Peer():
                 if 'slot' in d:
                     Slot.slotcount = int(d['slot'][0])
                     Slot.second = int(d['slot'][1])
-                print(d)
                 
             elif 'validator' in d:
                 if d['validator'][1] == int(self.sport):
-                    self.validator = int(self.sport)
+                    print("[!]I am the validator")
 
+                    self.validator = int(self.sport)
+                    block =  Block.create_block(self)
+
+                    block['header']['index'] = Slot.get_slot()[0] 
+                    block['body'] = self.mempool
+                    print("[!]Mempool ",self.mempool)
+
+                    
+
+                    self.block = block
                     #crate block if i am the validator
-                    print('Iam the validaotor')
-                    self.broadcast(Block.create_block(self))
+                    self.broadcast(block)
+
+                    self.mempool = []
 
             elif 'header' in d:
                 self.block = d
                 self.block['validated'].append(self.sport)
-
-                #broadcast the vote
+                
+                self.mempool = []
+                self.cast_vote()
+                
 
                     
+            elif 'by' in d:
+                if hasattr(self,'block'): 
+                    try:
+                        self.block['validated'].append(d['by'])
+                        if len(self.block['validated'])==int(len(self.connections)):
+                            self.chain.append(self.block)
+                            self.block = {}
+                            print('[!]Chain Created')
+                            print(json.dumps(self.chain, indent=4))
+                    except:
+                        pass
+
+            elif 'nonce' in d:
+                d['nonced'] = d['nonce']
+                del d['nonce']
+                self.broadcast(d)
+                self.mempool.append(d)
+
+            elif 'nonced' in d:
+                self.mempool.append(d)
+
             else:
                 print(d)

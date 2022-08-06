@@ -18,6 +18,8 @@ class Slot:
             validator = Block.find_proposer(cls.peer.connections)
             cls.peer.broadcast({"validator":validator})
 
+            
+
         print("Slot=>",cls.slotcount," ",cls.second,end="\r")
         sc.enter(1, 1,cls.slotfun, (cls,sc,))
 
