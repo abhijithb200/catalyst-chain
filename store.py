@@ -5,7 +5,7 @@
 from sqlitedict import SqliteDict
 
 
-db = SqliteDict("./lib/ex.sqlite",autocommit=True)
+db = SqliteDict("ex.sqlite",autocommit=True)
 
 
 for key, item in db.items():
