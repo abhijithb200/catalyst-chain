@@ -59,6 +59,10 @@ class Block:
                     mempool.append(i)
 
             block['body'] = mempool
+            cls.m.add_leaf_from_db()
+            block['header']['stateRoot']=cls.m.root.hash
+        else:
+            cls.m.add_leaf_from_db()
             block['header']['stateRoot']=cls.m.root.hash
         return block
 
@@ -75,11 +79,11 @@ class Block:
 
                     cls.m.replace(tnx['from'],balance=(int(history_from['balance'])-int(tnx['amount'])),nonce=int(history_from['nonce']+1))
                     cls.m.replace(tnx['to'],balance=(int(history_to['balance'])+int(tnx['amount'])),nonce=int(history_to['nonce']+1))
-                    cls.m.add_leaf_from_db()
+                    
                     print(cls.m.root.hash)
                 except KeyError:
                     cls.m.add_leaf_to_db(tnx['to'],{'addr':tnx['to'],'nonce':0,'balance':0}) 
-                    cls.m.add_leaf_from_db()                   
+                                   
                     return Block.checkvalidity(tnx)
                 
                 return True
@@ -87,7 +91,7 @@ class Block:
                 return False
         except KeyError:
             cls.m.add_leaf_to_db(tnx['from'],{'addr':tnx['from'],'nonce':0,'balance':0})
-            cls.m.add_leaf_from_db()
+            
             return Block.checkvalidity(tnx)
 
 
