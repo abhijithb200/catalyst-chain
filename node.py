@@ -25,7 +25,14 @@ Block.startchain(peer,m)
 
 
 while True:
-    msg = input('>')
-    peer.broadcast({"msg":msg})
+
+    try:
+        msg = input('>')
+        peer.broadcast({"msg":msg})
+
+    except KeyboardInterrupt:
+        peer.queryend()
+        print('exiting...')
+        exit()
 
 

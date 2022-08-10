@@ -57,6 +57,14 @@ class Peer2Peer():
         if self.sport!='5000':
             Peer2Peer.send(data,('127.0.0.1',5000))
 
+    def queryend(self):
+        data = {'query':'node_termination',
+            'from':{'ip':'127.0.0.1','port':self.sport}
+            }
+
+        if self.sport!='5000':
+            Peer2Peer.send(data,('127.0.0.1',5000))
+
     def querynodestart(self):
         data = {'query':'node_start',
             'from':{'ip':'127.0.0.1','port':self.sport}
@@ -87,6 +95,10 @@ class Peer2Peer():
                     self.addconnections(addr)
                     self.broadcast({'nodes':self.connections,'slot':Slot.get_slot()})
 
+                elif d['query'] == "node_termination":
+                    addr = (d['from']['ip'],int(d['from']['port']))
+                    self.connections.remove(addr)
+                    self.broadcast({'nodes':self.connections})
                 
             elif 'nodes' in d:
                 self.setconnections(d['nodes'])
