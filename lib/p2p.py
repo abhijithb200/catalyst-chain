@@ -6,8 +6,10 @@ from lib.PoS import Block
 
 
 class Peer2Peer():
-    def __init__(self,sport):
+    def __init__(self,sport,master):
         self.sport = sport
+        self.master = master
+
         self.connections = []
         self.mempool = []
         
@@ -51,53 +53,53 @@ class Peer2Peer():
         
     def querynodes(self):
         data = {'query':'node_discovery',
-            'from':{'ip':'127.0.0.1','port':self.sport}
+            'from':{'port':self.sport}
             }
 
-        if self.sport!='5000':
-            Peer2Peer.send(data,('127.0.0.1',5000))
+        if self.sport!=5000:
+            Peer2Peer.send(data,self.master)
 
     def queryend(self):
         data = {'query':'node_termination',
-            'from':{'ip':'127.0.0.1','port':self.sport}
+            'from':{'port':self.sport}
             }
 
-        if self.sport!='5000':
-            Peer2Peer.send(data,('127.0.0.1',5000))
+        if self.sport!=5000:
+            Peer2Peer.send(data,self.master)
 
     def querynodestart(self):
         data = {'query':'node_start',
-            'from':{'ip':'127.0.0.1','port':self.sport}
+            'from':{'port':self.sport}
             }
 
-        if self.sport!='5000':
-            Peer2Peer.send(data,('127.0.0.1',5000))
+        if self.sport!=5000:
+            Peer2Peer.send(data,self.master)
         else:
-            self.connections.append(('127.0.0.1',5000))
+            self.connections.append(self.master)
 
     def listen(self,port):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.bind(('0.0.0.0', int(port)))
-        print('Listening udp on ',int(port))
+        sock.bind(('0.0.0.0', port))
+        print('Listening udp on ',port)
 
         while True:
             data,addr = sock.recvfrom(2024)
             d = json.loads(str(data.decode()))
             if 'query' in d :
                 if d['query'] == "node_discovery":
-                    addr = (d['from']['ip'],int(d['from']['port']))
+                    addr = (addr[0],int(d['from']['port']))
                     self.addconnections(addr)
                     self.broadcast({'nodes':self.connections})
 
                 elif d['query'] == "node_start":
-                    addr = (d['from']['ip'],int(d['from']['port']))
+                    addr = (addr[0],int(d['from']['port']))
                     self.addconnections(addr)
                     self.broadcast({'nodes':self.connections,'slot':Slot.get_slot()})
 
                 elif d['query'] == "node_termination":
-                    addr = (d['from']['ip'],int(d['from']['port']))
-                    self.connections.remove(addr)
+                    addr = (addr[0],int(d['from']['port']))
+                    if addr in self.connections: self.connections.remove(addr) 
                     self.broadcast({'nodes':self.connections})
                 
             elif 'nodes' in d:

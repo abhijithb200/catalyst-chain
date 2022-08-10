@@ -14,7 +14,7 @@ class Slot:
             cls.slotcount+=1
             cls.second=0    
         cls.second+=1
-        if int(cls.peer.sport) == 5000 and cls.second==2:
+        if cls.peer.sport == 5000 and cls.second==2:
             validator = Block.find_proposer(cls.peer.connections)
             cls.peer.broadcast({"validator":validator})
 

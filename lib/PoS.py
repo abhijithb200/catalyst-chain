@@ -30,7 +30,7 @@ class Block:
             return 'Noting'
         else:
             selected = random.choice(lst)
-            while selected == ('127.0.0.1',5000):
+            while selected[1] == 5000:
                 selected = random.choice(lst)
         
         return selected
