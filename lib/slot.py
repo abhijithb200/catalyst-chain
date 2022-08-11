@@ -13,6 +13,11 @@ class Slot:
         if cls.second==20:
             cls.slotcount+=1
             cls.second=0    
+            cls.peer.block=={}
+        elif cls.second==10 and cls.peer.block=={}:
+            #if no block were found upvote the previous block
+            cls.peer.cast_vote()
+
         cls.second+=1
         if cls.peer.sport == 5000 and cls.second==2:
             validator = Block.find_proposer(cls.peer.connections)

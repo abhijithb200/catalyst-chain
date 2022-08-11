@@ -1,5 +1,5 @@
 - master:
-  - {ip: 65.0.72.0,port: 5000}
+  - {ip: 192.168.1.7,port: 5000}
   # - {ip: 12.1,port: 5000}
 
 #port from 5000 to 5999 is reserved for master nodes

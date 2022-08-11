@@ -12,7 +12,7 @@ class Peer2Peer():
 
         self.connections = []
         self.mempool = []
-        
+        self.block = None
         #run up the server
         self.start_threat()
         self.querynodestart()
@@ -130,16 +130,21 @@ class Peer2Peer():
 
                     
             elif 'by' in d:
-                if hasattr(self,'block'): 
-                    try:
+                try:
+                    if self.block != {} :
                         self.block['validated'].append(d['by'])
                         if len(self.block['validated'])==int(len(self.connections)):
                             self.chain.append(self.block)
-                            self.block = {}
                             print('[!]Chain Created')
                             print(json.dumps(self.chain, indent=4))
-                    except:
-                        pass
+
+                    else:
+                        print('[!]Voting parent block')
+                        self.chain[-1]['validated'].append(d['by'])
+                except:
+                    pass
+                    
+
 
             elif 'nonce' in d:
                 d['nonced'] = d['nonce']

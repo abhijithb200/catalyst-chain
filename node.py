@@ -15,7 +15,8 @@ db = SqliteDict("ex.sqlite",autocommit=True)
 with open('settings.yaml') as file:
     try:
         data = yaml.safe_load(file)
-        sport = data[1]['port']
+        # sport = data[1]['port']
+        sport = int(sys.argv[1])
         master = (data[0]['master'][0]['ip'], data[0]['master'][0]['port'])
         print(master)
         # for i in data[0]['master']:
