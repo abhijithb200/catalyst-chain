@@ -1,8 +1,8 @@
 - master:
-  - {ip: 127.0.0.1,port: 5000}
+  - {ip: 65.0.72.0,port: 5000}
   # - {ip: 12.1,port: 5000}
 
 #port from 5000 to 5999 is reserved for master nodes
-- port: 7000
+- port: 6000
 
 
