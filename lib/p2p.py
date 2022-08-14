@@ -9,10 +9,10 @@ class Peer2Peer():
     def __init__(self,sport,master):
         self.sport = sport
         self.master = master
-
+        self.active = False
         self.connections = []
         self.mempool = []
-        self.block = None
+        self.blocks = []
         #run up the server
         self.start_threat()
         self.querynodestart()
@@ -47,8 +47,8 @@ class Peer2Peer():
             temp.append(tuple(i))
         self.connections = temp
 
-    def cast_vote(self):
-        vote={'by':self.sport,'slot':Slot.get_slot()}
+    def cast_vote(self,hash=0):
+        vote={'by':self.sport,'slot':Slot.get_slot(),'hash':hash}
         self.broadcast(vote)
         
     def querynodes(self):
@@ -113,32 +113,36 @@ class Peer2Peer():
                     print("[!]I am the validator")
 
                     self.validator = int(self.sport)
-                    self.block =  Block.create_block(self,Slot.get_slot()[0])
+                    block =  Block.create_block(self,Slot.get_slot()[0])
 
                     #crate block if i am the validator
-                    self.broadcast(self.block)
+                    self.broadcast(block)
+                    self.blocks.append(block)
 
                     self.mempool = []
 
             elif 'header' in d:
-                self.block = d
-                self.block['validated'].append(self.sport)
-                
+                d['validated'].append(self.sport)
+                self.blocks.append(d)
+               
                 self.mempool = []
-                self.cast_vote()
+                self.cast_vote(d['header']['hash'])
                 
-
+                
                     
             elif 'by' in d:
                 try:
-                    if self.block != {} :
-                        self.block['validated'].append(d['by'])
-                        if len(self.block['validated'])==int(len(self.connections)):
-                            self.chain.append(self.block)
-                            print('[!]Chain Created')
-                            print(json.dumps(self.chain, indent=4))
+                    for i in self.blocks:
+                        if d['hash'] == i['header']['hash']:  
+                            block = i
+                            block['validated'].append(d['by'])
+                            
+                            if len(block['validated'])==int(len(self.connections)):
+                                self.chain.append(block)
+                                print('[!]Chain Created')
+                                print(json.dumps(self.chain, indent=4))
 
-                    else:
+                    if self.blocks == [] and self.active:
                         print('[!]Voting parent block')
                         self.chain[-1]['validated'].append(d['by'])
                 except:

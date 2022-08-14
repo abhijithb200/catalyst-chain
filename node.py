@@ -19,9 +19,6 @@ with open('settings.yaml') as file:
         sport = int(sys.argv[1])
         master = (data[0]['master'][0]['ip'], data[0]['master'][0]['port'])
         print(master)
-        # for i in data[0]['master']:
-        #     # print(i['ip'],i['port'])
-        #     pass
     except yaml.YAMLError as exception:
         print(exception)
 

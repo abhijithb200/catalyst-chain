@@ -13,9 +13,12 @@ class Slot:
         if cls.second==20:
             cls.slotcount+=1
             cls.second=0    
-            cls.peer.block=={}
-        elif cls.second==10 and cls.peer.block=={}:
+            cls.peer.active=True
+            cls.peer.blocks=[]
+        elif cls.second==10 and cls.peer.blocks==[]:
             #if no block were found upvote the previous block
+            print('vote for parent')
+            cls.peer.chain[-1]['validated'].append(cls.peer.sport)
             cls.peer.cast_vote()
 
         cls.second+=1
